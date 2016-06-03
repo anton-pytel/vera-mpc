@@ -1,7 +1,5 @@
 module("L_MpcClient", package.seeall)
 
--- http://192.168.1.90:3480/data_request?id=action&output_format=json&DeviceNum=137&serviceId=urn:upnp-org:serviceId:SwitchPower1&action=SetTarget&newTargetValue=0
-
 MPCCTRL_SERVICE = "urn:demo-micasaverde-com:serviceId:MpcControl1"
 local DEVICE_ID
 local PARENT_DEVICE
@@ -22,7 +20,7 @@ end
 
 local function debug(text)
 	if (DEBUG_MODE) then
-		log("debug: " .. text, 35)
+		log("debug: " .. text)
 	end
 end
 
@@ -118,7 +116,7 @@ function startupDeferred()
 		-- Set the variable so that it appears in the Device/Advanced list
 		--
 		--luup.variable_set(MPCCTRL_SERVICE, "mesDeviceId", "203", PARENT_DEVICE)
-		--luup.variable_set(MPCCTRL_SERVICE, "mesServiceId", "urn:schemas-micasaverde-com:device:LightSensor:1", PARENT_DEVICE)
+		--luup.variable_set(MPCCTRL_SERVICE, "mesServiceId", "urn:micasaverde-com:serviceId:LightSensor1", PARENT_DEVICE)
 		--luup.variable_set(MPCCTRL_SERVICE, "mesVariableType", "CurrentLevel", PARENT_DEVICE)
 		
 		local msg = "Choose device to be controlled"
@@ -210,39 +208,6 @@ function initialize(parentDevice)
 	startupDeferred()
 end
 
-function parseJson(xString)
-  JSON = (loadfile "/usr/lib/lua/JSON.lua")()   
-  local object = JSON:decode(xString)
-  return object
- end
-
-function sendJsonRequest(xUrl,xPayload)
-  --local path = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/574d8abd4dc621282472c9b3/steps"
-  local path = xUrl
-  local http = require("socket.http")
-  local ltn12 = require("ltn12")
-  --local payload = [[ {"key":"My Key","name":"My Name","description":"The description","state":1} ]]
-  local payload = xPayload
- 
-  local response_body = { }
-  local res, code, response_headers, status = http.request
-  {
-    url = path,
-    method = "POST",
-    headers =
-    {
-      --["Authorization"] = "Maybe you need an Authorization header?", 
-      ["Content-Type"] = "application/json",
-      ["Content-Length"] = payload:len()
-    },
-    source = ltn12.source.string(payload),
-    sink = ltn12.sink.table(response_body)
-  }
-  return code, table.concat(response_body)
-end
-
-
-
 function setMpc(xTransFunc, xTransFuncType, xSamplePeriod, xInputDelay)
 
 	-- checks
@@ -324,8 +289,8 @@ function setMpc(xTransFunc, xTransFuncType, xSamplePeriod, xInputDelay)
    ]] 
    payload = string.gsub(payload,"#tranffunc",xTransFunc)
    payload = string.gsub(payload,"#transfunctype",xTransFuncType)
-   payload = string.gsub(payload,"#inputdelay",xSamplePeriod)
-   payload = string.gsub(payload,"#samplingtime",xInputDelay)
+   payload = string.gsub(payload,"#inputdelay",xInputDelay)
+   payload = string.gsub(payload,"#samplingtime",xSamplePeriod)
    local code, resp = sendJsonRequest(url, payload)	
    debug("code: " .. tostring(code))
    debug("response: " .. resp)
@@ -335,22 +300,34 @@ function setMpc(xTransFunc, xTransFuncType, xSamplePeriod, xInputDelay)
 		return 
    end
    local ctrl=parseJson(resp)
-
+	
    local mpcid = ctrl.Mpcid
+   luup.variable_set(MPCCTRL_SERVICE, "transferFunction", xTransFunc, PARENT_DEVICE)
+   luup.variable_set(MPCCTRL_SERVICE, "transFuncType", xTransFuncType, PARENT_DEVICE)
+   luup.variable_set(MPCCTRL_SERVICE, "inputDelay", xInputDelay, PARENT_DEVICE)
+   luup.variable_set(MPCCTRL_SERVICE, "samplePeriod", xSamplePeriod, PARENT_DEVICE)
 	
 	-- Resubmit the refreshCache job, unless the period==0 (disabled/manual)
 	debug("timer for nextStep set in " .. tostring(xSamplePeriod) .. " sec.")
-	luup.call_timer("nextStep", 1, tostring(xSamplePeriod), "")	
 	return mpcid;
 	
 end
 
-function getStep()
+function doStep ()
+	 local yComputedY, yComputedU = mpcctrl.getNextStep()
+	 if yComputedU then
+		 luup.variable_set(MPCCTRL_SERVICE, "computedY", yComputedY, PARENT_DEVICE)
+		 luup.variable_set(MPCCTRL_SERVICE, "computedU", yComputedU, PARENT_DEVICE)
+	 end
+end
+
+function getNextStep()
 
 	local bypass = luup.variable_get(MPCCTRL_SERVICE, "bypass", PARENT_DEVICE)
 	local samplePeriod =luup.variable_get(MPCCTRL_SERVICE, "samplePeriod", PARENT_DEVICE)
 	local lU = 0
 	local lY = 0
+	luup.variable_set(MPCCTRL_SERVICE, "stepTimestampStart", createDate(os.date('*t')), PARENT_DEVICE)
 	
 	if bypass~="1" then
 		local url = luup.variable_get(MPCCTRL_SERVICE, "mpcUrl", PARENT_DEVICE)
@@ -359,7 +336,7 @@ function getStep()
 		local lSRV = luup.variable_get(MPCCTRL_SERVICE, "mesServiceId", PARENT_DEVICE)
 		local lVAR = luup.variable_get(MPCCTRL_SERVICE, "mesVariableType", PARENT_DEVICE)
 		
-		local lMeasuredValue = luup.variable_get(lSRV, lVAR, lDV)
+		local lMeasuredValue = luup.variable_get(lSRV, lVAR, tonumber(lDV))
 		local setpoint = luup.variable_get(MPCCTRL_SERVICE, "setpoint", PARENT_DEVICE)
 		local payload = [[{
 							"CtrlStateLast": {
@@ -378,8 +355,8 @@ function getStep()
 								]
 							  ]	
 						  }	  ]]
-		payload = string.gsub(payload,"#measured",lMeasuredValue)
-		payload = string.gsub(payload,"#setpoint",setpoint)				  
+		payload = string.gsub(payload,"#measured",tostring(lMeasuredValue))
+		payload = string.gsub(payload,"#setpoint",tostring(setpoint))				  
 		local path = url .. mpcid .. "/steps"
 		local code, resp = sendJsonRequest(path, payload)
 		local MpcStep=parseJson(resp)
@@ -398,13 +375,16 @@ function getStep()
 			local lcSRV = luup.variable_get(MPCCTRL_SERVICE, "ctrlServiceId", PARENT_DEVICE)
 			local lcACT = luup.variable_get(MPCCTRL_SERVICE, "ctrlActionType", PARENT_DEVICE)			
 			local lcVAR = luup.variable_get(MPCCTRL_SERVICE, "ctrlVariableType", PARENT_DEVICE)
-			local resultCode, resultString, job, returnArguments = luup.call_action(lcSRV, lcACT, { lcVAR = lU }, lcDV)
+			local resultCode, resultString, job, returnArguments = luup.call_action(lcSRV, lcACT, { [ lcVAR ] = lU }, tonumber(lcDV))
 			debug ("resultCode" .. resultCode)
 			debug ("resultString" .. resultString)
 			debug ("job" .. job)
-			debug ("returnArguments" .. returnArguments)
+			if (returnArguments~=nil) then
+				debug ("returnArguments" .. table.concat(returnArguments))
+			end
 		end
     end
+	luup.variable_set(MPCCTRL_SERVICE, "stepTimestampEnd", createDate(os.date('*t')), PARENT_DEVICE)
 	-- Resubmit the refreshCache job, unless the period==0 (disabled/manual)
 	debug("timer for nextStep set in " .. tostring(samplePeriod) .. " sec.")
 	luup.call_timer("nextStep", 1, tostring(samplePeriod), "")			
@@ -423,22 +403,144 @@ function setMesDevice(xDeviceId, xServiceId, xVariable)
 	luup.variable_set(MPCCTRL_SERVICE, "mesVariableType", xVariable, PARENT_DEVICE)	
 end
 
-
-	
-function test()	
-   --local url = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/"
-   --local mpcid = "574d8abd4dc621282472c9b3"
-   --local payload = ' { "CtrlStateLast": { "Y0": { "Val": [ ' .. xMeasuredValue .. ' ] }  } } '
-   --local path = url .. mpcid .. "/steps"
-   --local code, resp = sendJsonRequest(path, payload)
-   --local MpcStep=parseJson(resp)
-   --luup.log("step")
-   --luup.log(MpcStep.Stepid)
-   --luup.log("u")
-   --luup.log(MpcStep.CtrlStateNew.U0.Val[1])
-   --luup.log(MpcStep.CtrlStateNew.Y0.Val[1])
+function testStep()	
+	local url = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/"
+	local mpcid = "574d8abd4dc621282472c9b3"
+	local payload = [[{
+						"CtrlStateLast": {
+							"Y0": {
+							  "Val": [
+								#measured
+							  ]
+							}
+						},
+						"RefSig": [
+							[
+							  {
+								"TRef": 0,
+								"YRef": #setpoint
+							  }
+							]
+						  ]	
+					  }	  ]]
+	payload = string.gsub(payload,"#measured",20)
+	payload = string.gsub(payload,"#setpoint",21)	
+    local path = url .. mpcid .. "/steps"
+    local code, resp = sendJsonRequest(path, payload)
+    local MpcStep=parseJson(resp)
+    luup.log("step")
+    luup.log(MpcStep.Stepid)
+    luup.log("u")
+    luup.log(MpcStep.CtrlStateNew.U0.Val[1])
+	luup.log("y")
+    luup.log(MpcStep.CtrlStateNew.Y0.Val[1])
 end	
---test()
+
+function testCtrl()
+	local url = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/"
+	local payload = [[
+	{
+	"CtlSys": {
+		"Tfcn" : {
+			"SysString": "#tranffunc",
+			"SysType": "#transfunctype"
+		}
+	},
+	"InputDelay": #inputdelay,
+	"SamplingTime": #samplingtime
+	}
+	]] 
+	payload = string.gsub(payload,"#tranffunc","((z^-1*(1.04 + 0.23 * z^-1)))/((1-0.99*z^-1)*(1-5.1e-3*z^-1))")
+	payload = string.gsub(payload,"#transfunctype","zspace")
+	payload = string.gsub(payload,"#inputdelay","0")
+	payload = string.gsub(payload,"#samplingtime","15")
+	local code, resp = sendJsonRequest(url, payload)	
+	
+	if code~=200 then
+		luup.log("Failed to load controller")
+	
+	end
+	local ctrl=parseJson(resp)
+
+	local mpcid = ctrl.Mpcid
+	luup.log("mpcid")
+	luup.log(mpcid)
+end
 
 
+function parseJson(xString)
+  JSON = (loadfile "/usr/lib/lua/JSON.lua")()   
+  local object = JSON:decode(xString)
+  return object
+ end
 
+function sendJsonRequest(xUrl,xPayload)
+  --local path = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/574d8abd4dc621282472c9b3/steps"
+  local path = xUrl
+  local http = require("socket.http")
+  local ltn12 = require("ltn12")
+  --local payload = [[ {"key":"My Key","name":"My Name","description":"The description","state":1} ]]
+  local payload = xPayload
+ 
+  local response_body = { }
+  local res, code, response_headers, status = http.request
+  {
+    url = path,
+    method = "POST",
+    headers =
+    {
+      --["Authorization"] = "Maybe you need an Authorization header?", 
+      ["Content-Type"] = "application/json",
+      ["Content-Length"] = payload:len()
+    },
+    source = ltn12.source.string(payload),
+    sink = ltn12.sink.table(response_body)
+  }
+  return code, table.concat(response_body)
+end
+
+function createDate(xDateTime)
+	local t = xDateTime
+	return t.year .. string.format( "%02d", t.month ) ..string.format( "%02d", t.day )  .. string.format( "%02d", t.hour )  .. string.format( "%02d", t.min )  .. string.format( "%02d", t.sec ) 
+end
+
+function testval()
+	PARENT_DEVICE = 222
+	MPCCTRL_SERVICE = "urn:demo-micasaverde-com:serviceId:MpcControl1"
+	local lDV = luup.variable_get(MPCCTRL_SERVICE, "mesDeviceId", PARENT_DEVICE)
+	luup.log(lDV)
+	local lSRV = luup.variable_get(MPCCTRL_SERVICE, "mesServiceId", PARENT_DEVICE)
+	luup.log(lSRV)
+	local lVAR = luup.variable_get(MPCCTRL_SERVICE, "mesVariableType", PARENT_DEVICE)
+	luup.log(lVAR)
+	local lMeasuredValue = luup.variable_get(lSRV, lVAR, tonumber(lDV))
+	--local lMeasuredValue = luup.variable_get("urn:micasaverde-com:serviceId:LightSensor1", "CurrentLevel", 203)
+	local setpoint = luup.variable_get(MPCCTRL_SERVICE, "setpoint", PARENT_DEVICE)
+	luup.log("mes: ")
+	luup.log(lMeasuredValue)
+	luup.log("sp: " .. setpoint)
+end
+function testval2()
+	PARENT_DEVICE = 222
+	MPCCTRL_SERVICE = "urn:demo-micasaverde-com:serviceId:MpcControl1"
+	local lcDV = luup.variable_get(MPCCTRL_SERVICE, "ctrlDeviceId", PARENT_DEVICE)
+	luup.log(lcDV)
+	local lcSRV = luup.variable_get(MPCCTRL_SERVICE, "ctrlServiceId", PARENT_DEVICE)
+	luup.log(lcSRV)
+	local lcACT = luup.variable_get(MPCCTRL_SERVICE, "ctrlActionType", PARENT_DEVICE)			
+	luup.log(lcACT)
+	local lcVAR = luup.variable_get(MPCCTRL_SERVICE, "ctrlVariableType", PARENT_DEVICE)
+	luup.log(lcVAR)
+	
+	--local resultCode, resultString, job, returnArguments = luup.call_action(lcSRV, lcACT, { lcVAR = 50 }, tonumber(lcDV))
+	local resultCode, resultString, job, returnArguments = luup.call_action("urn:upnp-org:serviceId:Dimming1", "SetLoadLevelTarget", { ["newLoadlevelTarget"] = 100 }, tonumber(169))
+	
+	luup.log ("resultCode" .. resultCode)
+	luup.log ("resultString" .. resultString)
+	luup.log ("job" .. job)
+	if ( returnArguments ~= nil ) then
+		luup.log ("returnArguments" .. table.concat(returnArguments))
+	end
+end
+--testval2()
+--TODO: osetrit chybove stavy zo servera

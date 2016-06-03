@@ -47,13 +47,13 @@
     </stateVariable>  		
 	<stateVariable sendEvents="no">
        <name>stepTimestampStart</name>
-       <dataType>dateTime</dataType>
+       <dataType>string</dataType>
        <defaultValue>2016-06-01</defaultValue>
 	   <shortCode>stepTimestampStart</shortCode>
     </stateVariable> 
 	<stateVariable sendEvents="no">
        <name>stepTimestampEnd</name>
-       <dataType>dateTime</dataType>
+       <dataType>string</dataType>
        <defaultValue>2016-06-01</defaultValue>
 	   <shortCode>stepTimestampEnd</shortCode>
     </stateVariable> 	
@@ -201,15 +201,11 @@
       </argumentList>	  
     </action>
     <action>
-      <name>toggleBypass</name>
-	  <argumentList>
-		<argument>
-          <name>xbypass</name>
-          <direction>in</direction>
-          <relatedStateVariable>bypass</relatedStateVariable>
-        </argument>
-      </argumentList>	  
+      <name>setBypass</name>  
     </action>	
+    <action>
+      <name>unsetBypass</name>  
+    </action>		
     <action>
       <name>setCtrlDevice</name>
 	  <argumentList>
