@@ -4,9 +4,9 @@
     package.loaded.L_MpcClient = nil
     mpcctrl = require ("L_MpcClient")    
 	MPCCTRL_SERVICE = mpcctrl.MPCCTRL_SERVICE
-    function refreshVariables()
-	  mpcctrl.refreshCache()
-	end
+    function nextStep()
+	  mpcctrl.getStep()
+    end	
     function startup(lul_device)
 	  mpcctrl.initialize(lul_device)
     end
@@ -16,77 +16,61 @@
   </incoming>
   <startup>startup</startup>
   <actionList>
+    <action>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>setMpcUrl</name>
+      <run>
+        luup.variable_set(MPCCTRL_SERVICE, "mpcUrl", lul_settings.xUrl or "", lul_device)
+      </run>
+    </action>
 	<action>
-	 <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-	 <name>GetFeed</name>
+	 <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+	 <name>setMpc</name>
 	   <run>
-		 yTitle, yDescr, yContent, yLink = mpcctrl.sendRequest(lul_settings.xRssUrl, lul_settings.xUserName, lul_settings.xPassword)
-		 if yTitle then
-			 luup.variable_set(MPCCTRL_SERVICE, "rssTitle", yTitle, lul_device)
-			 luup.variable_set(MPCCTRL_SERVICE, "rssDescription", yDescr, lul_device)
-			 luup.variable_set(MPCCTRL_SERVICE, "rssContent", yContent, lul_device)
-			 luup.variable_set(MPCCTRL_SERVICE, "rssLink", yLink, lul_device)
+		 yMpcID = mpcctrl.setMpc(lul_settings.xTransFunc, lul_settings.xTransFuncType, lul_settings.xSamplePeriod, lul_settings.xInputDelay)
+		 if yMpcID then
+			 luup.variable_set(MPCCTRL_SERVICE, "mpcid", yMpcID, lul_device)
 		 end
 	   </run>
-	</action>  
+	</action>	
+	<action>
+	 <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+	 <name>getStep</name>
+	   <run>
+		 yComputedY, yComputedU = mpcctrl.getStep()
+		 if yComputedU then
+			 luup.variable_set(MPCCTRL_SERVICE, "computedY", yComputedY, lul_device)
+			 luup.variable_set(MPCCTRL_SERVICE, "computedU", yComputedU, lul_device)
+		 end
+	   </run>
+	</action>   
     <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetURL</name>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>setSetPoint</name>
       <run>
-        luup.variable_set(MPCCTRL_SERVICE, "rssURL", lul_settings.xRssUrl or "", lul_device)
-		luup.call_timer("refreshVariables", 1, "1", "")
-      </run>
-    </action>
-    <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetUser</name>
-      <run>
-	    --luup.log("service" .. MPCCTRL_SERVICE)
-        luup.variable_set(MPCCTRL_SERVICE, "userName", lul_settings.xUserName or "", lul_device)
-		luup.call_timer("refreshVariables", 1, "1", "")
-      </run>
-    </action>	
-    <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetPass</name>
-      <run>
-        luup.variable_set(MPCCTRL_SERVICE, "Password", lul_settings.xPassword or "", lul_device)
-        luup.call_timer("refreshVariables", 1, "1", "")
+        luup.variable_set(MPCCTRL_SERVICE, "setpoint", lul_settings.xSetpoint or "", lul_device)
       </run>
     </action>	
     <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetRefPeriod</name>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>toggleBypass</name>
       <run>
-	    --luup.log("service" .. MPCCTRL_SERVICE)
-	    --luup.log("lul_settings.xRefPeriod" .. lul_settings.xRefPeriod)
-        luup.variable_set(MPCCTRL_SERVICE, "refreshperiod", lul_settings.xRefPeriod or "", lul_device)
-        luup.call_timer("refreshVariables", 1, "1", "")
-      </run>
-    </action>
-    <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetWeather</name>
-      <run>
-        luup.variable_set(MPCCTRL_SERVICE, "weatherItem", lul_settings.xSet or "", lul_device)
-        luup.call_timer("refreshVariables", 1, "1", "")
+        luup.variable_set(MPCCTRL_SERVICE, "bypass", lul_settings.xbypass or "0", lul_device)
       </run>
     </action>	
     <action>
-      <serviceId>urn:demo-micasaverde-com:serviceId:RssRead1</serviceId>
-      <name>SetSelected</name>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>setCtrlDevice</name>
       <run>
-        luup.variable_set(MPCCTRL_SERVICE, "selectedItem", lul_settings.xItemId or "", lul_device)
-        luup.call_timer("refreshVariables", 1, "1", "")
+        mpcctrl.setCtrlDevice(lul_settings.xDeviceId, lul_settings.xServiceId, lul_settings.xAction, lul_settings.xVariable)
       </run>
     </action>		
     <action>
-      <serviceId>urn:micasaverde-com:serviceId:HaDevice1</serviceId>
-      <name>Poll</name>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>setMesDevice</name>
       <run>
-        -- Force refreshCache to get called in a Timer
-        luup.call_timer("refreshVariables", 1, "1", "")
+        mpcctrl.setMesDevice(lul_settings.xDeviceId, lul_settings.xServiceId, lul_settings.xVariable)
       </run>
-    </action>
+    </action>	
   </actionList>
 </implementation>

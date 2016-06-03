@@ -30,7 +30,7 @@
 	<stateVariable sendEvents="no">
        <name>mpcUrl</name>
        <dataType>string</dataType>
-       <defaultValue>http://localhost:8080/c-a-a-s/rest/mpccontrollers</defaultValue>
+       <defaultValue>http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers</defaultValue>
 	   <shortCode>mpcUrl</shortCode>
     </stateVariable>	
 	<stateVariable sendEvents="no">
@@ -82,35 +82,47 @@
 	   <shortCode>measuredValue</shortCode>
 	</stateVariable>	
 	<stateVariable sendEvents="no">
-	   <name>veraurl</name>          
-	   <dataType>string</dataType> 
-	   <defaultValue>http://192.168.1.90:3480/data_request?id=action&output_format=json&</defaultValue> 
-	   <shortCode>veraurl</shortCode>
-	</stateVariable>	
-	<stateVariable sendEvents="no">
-	   <name>deviceId</name>          
+	   <name>ctrlDeviceId</name>          
 	   <dataType>ui4</dataType> 
 	   <defaultValue>137</defaultValue> 
-	   <shortCode>deviceId</shortCode>
+	   <shortCode>ctrlDeviceId</shortCode>
 	</stateVariable>
 	<stateVariable sendEvents="no">
-	   <name>serviceId</name>          
+	   <name>ctrlServiceId</name>          
 	   <dataType>string</dataType> 
 	   <defaultValue>serviceId=urn:upnp-org:serviceId:SwitchPower1</defaultValue> 
-	   <shortCode>serviceId</shortCode>
+	   <shortCode>ctrlServiceId</shortCode>
 	</stateVariable>
 	<stateVariable sendEvents="no">
-	   <name>actionType</name>          
+	   <name>ctrlActionType</name>          
 	   <dataType>string</dataType> 
 	   <defaultValue>SetTarget</defaultValue> 
-	   <shortCode>actionType</shortCode>
+	   <shortCode>ctrlActionType</shortCode>
 	</stateVariable>	
 	<stateVariable sendEvents="no">
-	   <name>variableType</name>          
+	   <name>ctrlVariableType</name>          
 	   <dataType>string</dataType> 
 	   <defaultValue>newTargetValue</defaultValue> 
-	   <shortCode>variableType</shortCode>
-	</stateVariable>	
+	   <shortCode>ctrlVariableType</shortCode>
+	</stateVariable>
+	<stateVariable sendEvents="no">
+	   <name>mesDeviceId</name>          
+	   <dataType>ui4</dataType> 
+	   <defaultValue>203</defaultValue> 
+	   <shortCode>mesDeviceId</shortCode>
+	</stateVariable>
+	<stateVariable sendEvents="no">
+	   <name>mesServiceId</name>          
+	   <dataType>string</dataType> 
+	   <defaultValue>urn:schemas-micasaverde-com:device:LightSensor:1</defaultValue> 
+	   <shortCode>mesServiceId</shortCode>
+	</stateVariable>
+	<stateVariable sendEvents="no">
+	   <name>mesVariableType</name>          
+	   <dataType>string</dataType> 
+	   <defaultValue>CurrentLevel</defaultValue> 
+	   <shortCode>mesVariableType</shortCode>
+	</stateVariable>		
 	<stateVariable sendEvents="yes">
 		<name>computedY</name>  
 		<dataType>r8</dataType> 
@@ -167,31 +179,6 @@
       <name>getStep</name>
 	  <argumentList>
 		<argument>
-          <name>xMeasuredValue</name>
-          <direction>in</direction>
-          <relatedStateVariable>measuredValue</relatedStateVariable>
-        </argument>
-		<argument>
-          <name>xStepTimestampStart</name>
-          <direction>in</direction>
-          <relatedStateVariable>stepTimestampStart</relatedStateVariable>
-        </argument>		
-		<argument>
-          <name>xSetpoint</name>
-          <direction>in</direction>
-          <relatedStateVariable>setpoint</relatedStateVariable>
-        </argument>
-		<argument>
-          <name>xSetpoint</name>
-          <direction>in</direction>
-          <relatedStateVariable>setpoint</relatedStateVariable>
-        </argument>	
-		<argument>
-          <name>yStepTimestampEnd</name>
-          <direction>out</direction>
-          <relatedStateVariable>stepTimestampEnd</relatedStateVariable>
-        </argument>	
-		<argument>
           <name>yComputedY</name>
           <direction>out</direction>
           <relatedStateVariable>computedY</relatedStateVariable>
@@ -224,32 +211,47 @@
       </argumentList>	  
     </action>	
     <action>
-      <name>setDevice</name>
+      <name>setCtrlDevice</name>
 	  <argumentList>
-		<argument>
-          <name>xVeraUrl</name>
-          <direction>in</direction>
-          <relatedStateVariable>veraurl</relatedStateVariable>
-        </argument>
 		<argument>
           <name>xDeviceId</name>
           <direction>in</direction>
-          <relatedStateVariable>deviceId</relatedStateVariable>
+          <relatedStateVariable>ctrlDeviceId</relatedStateVariable>
         </argument>		
 		<argument>
           <name>xServiceId</name>
           <direction>in</direction>
-          <relatedStateVariable>serviceId</relatedStateVariable>
+          <relatedStateVariable>ctrlServiceId</relatedStateVariable>
         </argument>
 		<argument>
           <name>xAction</name>
           <direction>in</direction>
-          <relatedStateVariable>actionType</relatedStateVariable>
+          <relatedStateVariable>ctrlActionType</relatedStateVariable>
         </argument>	
 		<argument>
           <name>xVariable</name>
           <direction>in</direction>
-          <relatedStateVariable>variableType</relatedStateVariable>
+          <relatedStateVariable>ctrlVariableType</relatedStateVariable>
+        </argument>	
+      </argumentList>	  
+    </action>
+    <action>
+      <name>setMesDevice</name>
+	  <argumentList>
+		<argument>
+          <name>xDeviceId</name>
+          <direction>in</direction>
+          <relatedStateVariable>mesDeviceId</relatedStateVariable>
+        </argument>		
+		<argument>
+          <name>xServiceId</name>
+          <direction>in</direction>
+          <relatedStateVariable>mesServiceId</relatedStateVariable>
+        </argument>
+		<argument>
+          <name>xVariable</name>
+          <direction>in</direction>
+          <relatedStateVariable>mesVariableType</relatedStateVariable>
         </argument>	
       </argumentList>	  
     </action>	
