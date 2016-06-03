@@ -360,7 +360,26 @@ function getStep()
 		local lVAR = luup.variable_get(MPCCTRL_SERVICE, "mesVariableType", PARENT_DEVICE)
 		
 		local lMeasuredValue = luup.variable_get(lSRV, lVAR, lDV)
-		local payload = ' { "CtrlStateLast": { "Y0": { "Val": [ ' .. lMeasuredValue .. ' ] }  } } '
+		local setpoint = luup.variable_get(MPCCTRL_SERVICE, "setpoint", PARENT_DEVICE)
+		local payload = [[{
+							"CtrlStateLast": {
+								"Y0": {
+								  "Val": [
+									#measured
+								  ]
+								}
+							},
+							"RefSig": [
+								[
+								  {
+									"TRef": 0,
+									"YRef": #setpoint
+								  }
+								]
+							  ]	
+						  }	  ]]
+		payload = string.gsub(payload,"#measured",lMeasuredValue)
+		payload = string.gsub(payload,"#setpoint",setpoint)				  
 		local path = url .. mpcid .. "/steps"
 		local code, resp = sendJsonRequest(path, payload)
 		local MpcStep=parseJson(resp)
