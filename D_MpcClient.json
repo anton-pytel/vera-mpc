@@ -79,7 +79,7 @@
                     "ControlType": "button",
                     "Label": {
                         "lang_tag": "cmd_set",
-                        "text": "Set"
+                        "text": "Unset"
                     },
                     "Display": {
                         "Top": 31,
