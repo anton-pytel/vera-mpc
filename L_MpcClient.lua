@@ -128,9 +128,7 @@ end
 -- this runs when the first time device is created
 function initialize(parentDevice)
     PARENT_DEVICE = parentDevice
-    local weather = luup.variable_get(MPCCTRL_SERVICE, "weatherItem", PARENT_DEVICE)
-	
-
+    
 	log("#" .. tostring(parentDevice) .. " starting up with id " .. luup.devices[parentDevice].id)
 
 	--
@@ -477,7 +475,9 @@ function parseJson(xString)
 function sendJsonRequest(xUrl,xPayload)
   --local path = "http://192.168.1.191:8080/c-a-a-s/rest/mpccontrollers/574d8abd4dc621282472c9b3/steps"
   local path = xUrl
+  package.loaded.http = nil
   local http = require("socket.http")
+  package.loaded.ltn12 = nil
   local ltn12 = require("ltn12")
   --local payload = [[ {"key":"My Key","name":"My Name","description":"The description","state":1} ]]
   local payload = xPayload
@@ -496,6 +496,9 @@ function sendJsonRequest(xUrl,xPayload)
     source = ltn12.source.string(payload),
     sink = ltn12.sink.table(response_body)
   }
+  package.loaded.http = nil
+  package.loaded.ltn12 = nil
+  collectgarbage("collect")  
   return code, table.concat(response_body)
 end
 
