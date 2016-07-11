@@ -279,10 +279,10 @@ function setMpc(xTransFunc, xTransFuncType, xSamplePeriod, xInputDelay)
         "Tfcn" : {
             "SysString": "#tranffunc",
             "SysType": "#transfunctype"
-        }
-    },
-	"InputDelay": #inputdelay,
-    "SamplingTime": #samplingtime
+        },
+		"InputDelay": #inputdelay,
+		"SamplingTime": #samplingtime
+    }
    }
    ]] 
    payload = string.gsub(payload,"#tranffunc",xTransFunc)
