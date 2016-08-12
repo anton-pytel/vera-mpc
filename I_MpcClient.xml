@@ -64,6 +64,7 @@
       <name>unsetBypass</name>
       <run>
         luup.variable_set(MPCCTRL_SERVICE, "bypass", "0", lul_device)
+		mpcctrl.doStep()
       </run>
     </action>		
     <action>

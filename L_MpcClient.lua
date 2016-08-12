@@ -381,11 +381,11 @@ function getNextStep()
 				debug ("returnArguments" .. table.concat(returnArguments))
 			end
 		end
+		-- Resubmit the refreshCache job, unless the period==0 (disabled/manual)
+		debug("timer for nextStep set in " .. tostring(samplePeriod) .. " sec.")
+		luup.call_timer("nextStep", 1, tostring(samplePeriod), "")		
     end
 	luup.variable_set(MPCCTRL_SERVICE, "stepTimestampEnd", createDate(os.date('*t')), PARENT_DEVICE)
-	-- Resubmit the refreshCache job, unless the period==0 (disabled/manual)
-	debug("timer for nextStep set in " .. tostring(samplePeriod) .. " sec.")
-	luup.call_timer("nextStep", 1, tostring(samplePeriod), "")			
 	return lY, lU;
 end
 
