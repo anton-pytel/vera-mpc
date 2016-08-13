@@ -199,7 +199,7 @@ function initialize(parentDevice)
 	if (luup.variable_get(MPCCTRL_SERVICE, "computedU", parentDevice) == nil) then
 		luup.variable_set(MPCCTRL_SERVICE, "computedU", "", parentDevice)
 	end		
-	
+	luup.variable_set(MPCCTRL_SERVICE, "uoffset", 0, parentDevice)
 	--
 	-- Do this deferred to avoid slowing down startup processes.
 	--
@@ -369,6 +369,8 @@ function getNextStep()
 		else
 			lU = MpcStep.CtrlStateNew.U0.Val[1]
 			lY = MpcStep.CtrlStateNew.Y0.Val[1]	
+			local luoffset = luup.variable_get(MPCCTRL_SERVICE, "uoffset", PARENT_DEVICE)
+			lU = lU + luoffset
 			local lcDV = luup.variable_get(MPCCTRL_SERVICE, "ctrlDeviceId", PARENT_DEVICE)
 			local lcSRV = luup.variable_get(MPCCTRL_SERVICE, "ctrlServiceId", PARENT_DEVICE)
 			local lcACT = luup.variable_get(MPCCTRL_SERVICE, "ctrlActionType", PARENT_DEVICE)			

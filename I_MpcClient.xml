@@ -81,5 +81,12 @@
         mpcctrl.setMesDevice(lul_settings.xDeviceId, lul_settings.xServiceId, lul_settings.xVariable)
       </run>
     </action>	
+    <action>
+      <serviceId>urn:demo-micasaverde-com:serviceId:MpcControl1</serviceId>
+      <name>setOffset</name>
+      <run>
+        luup.variable_set(MPCCTRL_SERVICE, "uoffset", lul_settings.xUoffset or "", lul_device)
+      </run>
+    </action>	
   </actionList>
 </implementation>

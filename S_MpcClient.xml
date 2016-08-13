@@ -122,7 +122,13 @@
 	   <dataType>string</dataType> 
 	   <defaultValue>CurrentLevel</defaultValue> 
 	   <shortCode>mesVariableType</shortCode>
-	</stateVariable>		
+	</stateVariable>	
+	<stateVariable sendEvents="no">
+	   <name>uoffset</name>          
+	   <dataType>r8</dataType> 
+	   <defaultValue>0</defaultValue> 
+	   <shortCode>uoffset</shortCode>
+	</stateVariable>	
 	<stateVariable sendEvents="yes">
 		<name>computedY</name>  
 		<dataType>r8</dataType> 
@@ -249,6 +255,16 @@
           <direction>in</direction>
           <relatedStateVariable>mesVariableType</relatedStateVariable>
         </argument>	
+      </argumentList>	  
+    </action>	
+    <action>
+      <name>setOffset</name>
+	  <argumentList>
+		<argument>
+          <name>xUoffset</name>
+          <direction>in</direction>
+          <relatedStateVariable>uoffset</relatedStateVariable>
+        </argument>
       </argumentList>	  
     </action>	
   </actionList>
